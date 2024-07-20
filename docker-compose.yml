@@ -1,0 +1,56 @@
+version: "3.9"
+services:
+    app:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        image: laravel_app
+        container_name: laravel_app
+        restart: unless-stopped
+        working_dir: /var/www
+        volumes:
+            - .:/var/www
+            - ./vendor:/var/www/vendor
+            - ./storage:/var/www/storage
+        networks:
+            - app-network
+        ports:
+            - "9000:9000"
+        depends_on:
+            - db
+
+    webserver:
+        image: nginx:alpine
+        container_name: nginx
+        restart: unless-stopped
+        ports:
+            - "8000:80"
+        volumes:
+            - .:/var/www
+            - ./nginx:/etc/nginx/conf.d
+        networks:
+            - app-network
+        depends_on:
+            - app
+
+    db:
+        image: mysql:5.7
+        container_name: mysql
+        restart: unless-stopped
+        environment:
+            MYSQL_DATABASE: rondo
+            MYSQL_ROOT_PASSWORD: secret
+            MYSQL_USER: rondo_user
+            MYSQL_PASSWORD: secret
+        volumes:
+            - dbdata:/var/lib/mysql
+        networks:
+            - app-network
+
+networks:
+    app-network:
+        driver: bridge
+
+volumes:
+    dbdata:
+        driver: local
